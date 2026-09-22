@@ -37,7 +37,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB hard limit
   fileFilter: (req, file, cb) => {
-    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    const isAllowed = ALLOWED_MIME_TYPES.has(file.mimetype) ||
+                      /\.(pdf|jpg|jpeg|png|webp)$/i.test(file.originalname || '');
+    if (isAllowed) {
       cb(null, true);
     } else {
       cb(new Error('Unsupported file type. Please upload a PDF, JPG, PNG, or WebP file.'));

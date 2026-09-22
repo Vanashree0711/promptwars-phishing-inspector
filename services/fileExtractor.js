@@ -91,7 +91,15 @@ async function extractFromImage(buffer, mimetype) {
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
       console.error('[FileExtractor] Vision API HTTP error:', response.status, errText.substring(0, 200));
-      return { text: null, error: 'Google Cloud Vision API returned an error. Please try again.' };
+      if (response.status === 403 && errText.includes('billing')) {
+        return {
+          text: null,
+          error:
+            'Google Cloud Vision API requires billing to be enabled on your Google Cloud Console project. ' +
+            'Please enable billing in your GCP console, or test using PDF upload / paste text.',
+        };
+      }
+      return { text: null, error: 'Google Cloud Vision API returned an error. Please check your API key permissions or try again.' };
     }
 
     const data = await response.json();
@@ -100,6 +108,14 @@ async function extractFromImage(buffer, mimetype) {
     if (data.responses?.[0]?.error) {
       const apiErr = data.responses[0].error;
       console.error('[FileExtractor] Vision API error:', apiErr);
+      if (apiErr.code === 403 && (apiErr.message || '').includes('billing')) {
+        return {
+          text: null,
+          error:
+            'Google Cloud Vision API requires billing to be enabled on your Google Cloud Console project. ' +
+            'Please enable billing in your GCP console, or test using PDF upload / paste text.',
+        };
+      }
       return { text: null, error: 'Google Cloud Vision API error: ' + (apiErr.message || 'unknown') };
     }
 
