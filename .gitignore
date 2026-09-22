@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment secrets — NEVER commit this file
+.env
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Build / coverage artifacts
+coverage/
+dist/
+
+# Docker build context
+.dockerignore

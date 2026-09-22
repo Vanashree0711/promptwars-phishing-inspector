@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Scan job offers, appointment letters, and URLs for scam and phishing indicators. Get an explainable Scam Threat Index score from 0–100%." />
+  <meta name="robots" content="index, follow" />
+  <title>Phishing Inspector — Fake Offer Letter & URL Scanner</title>
+
+  <!-- Google Fonts: Inter (professional, high-readability typeface) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Skip link for keyboard / screen-reader users -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <div class="brand" aria-label="Phishing Inspector home">
+        <span class="brand-icon" aria-hidden="true">🛡️</span>
+        <div class="brand-text">
+          <span class="brand-name">Phishing Inspector</span>
+          <span class="brand-sub">Powered by Google Safe Browsing</span>
+        </div>
+      </div>
+      <div class="header-badge">
+        <span class="badge-dot" aria-hidden="true"></span>
+        <span>Live Scanner</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════ MAIN ════════════════════════════ -->
+  <main id="main-content" class="main-content">
+    <div class="container">
+
+      <!-- ── Hero ─────────────────────────────────────────────── -->
+      <section class="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title" class="hero-title">
+          Fake Offer Letter &amp;<br />Phishing Inspector
+        </h1>
+        <p class="hero-description">
+          Analyse suspicious job offers, appointment letters, rental messages,
+          and URLs for common scam and phishing indicators.
+          Get an explainable <strong>Scam Threat Index</strong> score with
+          full evidence for every detected signal.
+        </p>
+      </section>
+
+      <!-- ── Scanner card ──────────────────────────────────────── -->
+      <section class="scanner-card" aria-labelledby="scanner-label">
+        <h2 id="scanner-label" class="sr-only">Analysis Scanner</h2>
+
+        <!-- Mode tabs -->
+        <div class="mode-tabs" role="tablist" aria-label="Choose analysis type">
+          <button
+            id="tab-text"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-text"
+            class="tab-btn tab-active"
+          >
+            <span aria-hidden="true">📄</span> Analyse Text
+          </button>
+          <button
+            id="tab-url"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-url"
+            class="tab-btn"
+          >
+            <span aria-hidden="true">🔗</span> Analyse URL
+          </button>
+        </div>
+
+        <form id="scan-form" novalidate aria-label="Scan input form">
+
+          <!-- Text panel -->
+          <div
+            id="panel-text"
+            role="tabpanel"
+            aria-labelledby="tab-text"
+            class="tab-panel"
+          >
+            <label for="text-input" class="input-label">
+              Paste message or document text
+              <span class="input-hint">
+                Job offer, appointment letter, rental agreement, or any suspicious message
+              </span>
+            </label>
+            <textarea
+              id="text-input"
+              name="text-input"
+              class="text-input"
+              placeholder="Paste the suspicious text here…"
+              aria-describedby="text-char-count"
+              maxlength="10000"
+              rows="9"
+              spellcheck="false"
+            ></textarea>
+            <div
+              id="text-char-count"
+              class="char-count"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span id="char-num">0</span> / 10,000 characters
+            </div>
+          </div>
+
+          <!-- URL panel -->
+          <div
+            id="panel-url"
+            role="tabpanel"
+            aria-labelledby="tab-url"
+            class="tab-panel hidden"
+            aria-hidden="true"
+          >
+            <label for="url-input" class="input-label">
+              Enter URL to analyse
+              <span class="input-hint">
+                Paste a suspicious link from a job offer, message, or email
+              </span>
+            </label>
+            <input
+              type="text"
+              id="url-input"
+              name="url-input"
+              class="url-input"
+              placeholder="https://example.com/job-offer"
+              aria-describedby="url-help"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div id="url-help" class="input-help-text">
+              Include the full URL. HTTPS or HTTP accepted.
+            </div>
+          </div>
+
+          <!-- Inline validation error -->
+          <div
+            id="form-error"
+            class="form-error hidden"
+            role="alert"
+            aria-live="assertive"
+          ></div>
+
+          <!-- Truncation notice -->
+          <div
+            id="truncation-notice"
+            class="truncation-notice hidden"
+            role="note"
+          >
+            ⚠️ Your text exceeded 10,000 characters and was trimmed for analysis.
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            id="scan-btn"
+            class="scan-btn"
+            aria-label="Scan for phishing and scam signals"
+          >
+            <span id="btn-text" class="btn-inner">
+              <span aria-hidden="true">🔍</span> Scan Now
+            </span>
+            <span id="btn-loading" class="btn-inner hidden" aria-hidden="true">
+              <span class="btn-spinner"></span> Analysing…
+            </span>
+          </button>
+        </form>
+      </section>
+
+      <!-- ── Loading card ──────────────────────────────────────── -->
+      <section
+        id="loading-section"
+        class="loading-section hidden"
+        aria-label="Analysis in progress"
+        aria-live="polite"
+      >
+        <div class="loading-card">
+          <div class="loading-orbs" aria-hidden="true">
+            <span class="orb orb1"></span>
+            <span class="orb orb2"></span>
+            <span class="orb orb3"></span>
+          </div>
+          <p class="loading-title">Scanning for risk signals…</p>
+          <p id="loading-step" class="loading-step">Parsing content</p>
+        </div>
+      </section>
+
+      <!-- ── Results section ───────────────────────────────────── -->
+      <section
+        id="results-section"
+        class="results-section hidden"
+        aria-label="Scan results"
+        aria-live="polite"
+        tabindex="-1"
+      >
+
+        <!-- STI Score card -->
+        <div class="score-card">
+          <div class="score-header">
+            <h2 class="score-card-title">Scam Threat Index</h2>
+            <p class="score-card-subtitle">Risk assessment based on detected signals</p>
+          </div>
+
+          <div class="score-body">
+            <!-- Circular gauge -->
+            <div class="gauge-wrapper" aria-hidden="true">
+              <svg
+                class="gauge-svg"
+                viewBox="0 0 220 220"
+                width="220"
+                height="220"
+              >
+                <!-- Track circle -->
+                <circle
+                  class="gauge-track"
+                  cx="110" cy="110" r="90"
+                  fill="none"
+                  stroke-width="16"
+                />
+                <!-- Fill arc (animated) -->
+                <circle
+                  id="gauge-arc"
+                  class="gauge-arc"
+                  cx="110" cy="110" r="90"
+                  fill="none"
+                  stroke-width="16"
+                  stroke-linecap="round"
+                  transform="rotate(-90 110 110)"
+                />
+              </svg>
+              <div class="gauge-inner">
+                <span id="gauge-score" class="gauge-score">0</span>
+                <span class="gauge-percent">%</span>
+              </div>
+            </div>
+
+            <!-- Risk label and description -->
+            <div class="risk-info">
+              <div id="risk-badge" class="risk-badge" aria-label="Risk level">
+                <span id="risk-emoji" class="risk-emoji" aria-hidden="true"></span>
+                <span id="risk-level-text" class="risk-level-text"></span>
+              </div>
+              <p id="risk-description" class="risk-description"></p>
+              <p id="score-methodology" class="score-methodology"></p>
+            </div>
+          </div>
+
+          <!-- Safe Browsing status banner -->
+          <div id="sb-status" class="sb-status hidden"></div>
+
+          <!-- Domain info (URL mode) -->
+          <div id="domain-card" class="domain-card hidden">
+            <h3 class="domain-card-title">
+              <span aria-hidden="true">🌐</span> Domain Information
+            </h3>
+            <dl id="domain-info-list" class="domain-info-list"></dl>
+          </div>
+        </div>
+
+        <!-- Risk signals -->
+        <div class="signals-section">
+          <h2 class="section-title">
+            Detected Risk Indicators
+            <span id="signal-count-badge" class="signal-count-badge"></span>
+          </h2>
+
+          <div id="signals-container" class="signals-container" aria-live="polite"></div>
+
+          <div id="no-signals-msg" class="no-signals-msg hidden">
+            <span aria-hidden="true">✅</span>
+            No specific risk indicators were detected in this scan.
+          </div>
+        </div>
+
+        <!-- Safety recommendations -->
+        <div id="recommendations-section" class="recommendations-section hidden">
+          <h2 class="section-title">
+            <span aria-hidden="true">💡</span> Safety Recommendations
+          </h2>
+          <ul id="recommendations-list" class="recommendations-list"></ul>
+        </div>
+
+        <!-- Disclaimer -->
+        <aside class="disclaimer" role="note" aria-label="Important disclaimer">
+          <span class="disclaimer-icon" aria-hidden="true">ℹ️</span>
+          <p id="disclaimer-text" class="disclaimer-text"></p>
+        </aside>
+
+        <!-- Scan another -->
+        <div class="scan-again-row">
+          <button id="scan-again-btn" class="scan-again-btn" type="button">
+            <span aria-hidden="true">🔄</span> Scan Another
+          </button>
+        </div>
+
+      </section><!-- /results-section -->
+
+    </div><!-- /container -->
+  </main>
+
+  <!-- ══════════════════════════ FOOTER ════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <p class="footer-text">
+        <strong>Phishing Inspector</strong> &mdash; Built for PromptWars Hackathon &mdash;
+        Uses <a
+          href="https://developers.google.com/safe-browsing"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="footer-link"
+        >Google Safe Browsing API</a>
+      </p>
+      <p class="footer-disclaimer">
+        For informational purposes only. Not a guarantee of fraud or legitimacy.
+        Always verify through official channels.
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
