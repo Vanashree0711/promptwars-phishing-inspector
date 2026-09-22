@@ -108,7 +108,7 @@ router.post('/file', (req, res, next) => {
       const { buffer, mimetype, originalname, size } = req.file;
 
       // Extract text from the file (PDF → pdf-parse, image → Vision API)
-      const extraction = await extractText(buffer, mimetype);
+      const extraction = await extractText(buffer, mimetype, originalname);
 
       if (!extraction.text) {
         return next(createError(extraction.error || 'Could not extract readable text from this file.', 422));

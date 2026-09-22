@@ -380,7 +380,8 @@ if (scanForm) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || data.error || 'Analysis failed. Please try again.');
+        const errMsg = data.message || (typeof data.error === 'string' ? data.error : null) || data.error?.message || 'Analysis failed. Please try again.';
+        throw new Error(errMsg);
       }
 
       showLoading(false);

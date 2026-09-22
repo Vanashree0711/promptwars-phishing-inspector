@@ -142,11 +142,18 @@ async function extractFromImage(buffer, mimetype) {
  * @param {string} mimetype
  * @returns {Promise<{ text: string|null, pageCount: number|null, error: string|null }>}
  */
-async function extractText(buffer, mimetype) {
-  if (mimetype === 'application/pdf') {
+async function extractText(buffer, mimetype, originalname = '') {
+  const isPdf =
+    mimetype === 'application/pdf' ||
+    mimetype === 'application/x-pdf' ||
+    mimetype === 'application/acrobat' ||
+    (originalname && originalname.toLowerCase().endsWith('.pdf')) ||
+    (buffer && buffer.length >= 5 && buffer.slice(0, 5).toString('ascii') === '%PDF-');
+
+  if (isPdf) {
     return extractFromPdf(buffer);
   }
-  if (IMAGE_TYPES.has(mimetype)) {
+  if (IMAGE_TYPES.has(mimetype) || /\.(jpg|jpeg|png|webp)$/i.test(originalname)) {
     const result = await extractFromImage(buffer, mimetype);
     return { ...result, pageCount: null };
   }
