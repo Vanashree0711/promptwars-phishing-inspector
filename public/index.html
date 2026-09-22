@@ -3,33 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Scan job offers, appointment letters, and URLs for scam and phishing indicators. Get an explainable Scam Threat Index score from 0–100%." />
+  <meta name="description" content="Upload offer letter PDFs or images, paste text, or enter a URL to scan for scam and phishing indicators. Get an explainable Scam Threat Index score." />
   <meta name="robots" content="index, follow" />
   <title>Phishing Inspector — Fake Offer Letter & URL Scanner</title>
 
-  <!-- Google Fonts: Inter (professional, high-readability typeface) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <!-- Skip link for keyboard / screen-reader users -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
   <header class="site-header" role="banner">
     <div class="container header-inner">
-      <div class="brand" aria-label="Phishing Inspector home">
+      <div class="brand">
         <span class="brand-icon" aria-hidden="true">🛡️</span>
         <div class="brand-text">
           <span class="brand-name">Phishing Inspector</span>
-          <span class="brand-sub">Powered by Google Safe Browsing</span>
+          <span class="brand-sub">Powered by Google Safe Browsing &amp; Cloud Vision</span>
         </div>
       </div>
       <div class="header-badge">
@@ -49,27 +43,42 @@
           Fake Offer Letter &amp;<br />Phishing Inspector
         </h1>
         <p class="hero-description">
-          Analyse suspicious job offers, appointment letters, rental messages,
-          and URLs for common scam and phishing indicators.
-          Get an explainable <strong>Scam Threat Index</strong> score with
-          full evidence for every detected signal.
+          Upload your offer letter (PDF or image), paste suspicious text, or enter a URL.
+          Get an explainable <strong>Scam Threat Index</strong> score with evidence for every detected signal.
         </p>
+        <!-- Three-mode summary pills -->
+        <div class="mode-pills" aria-label="Available analysis modes">
+          <span class="mode-pill">📎 Upload PDF / Image</span>
+          <span class="mode-pill">📄 Paste Text</span>
+          <span class="mode-pill">🔗 Check URL</span>
+        </div>
       </section>
 
       <!-- ── Scanner card ──────────────────────────────────────── -->
       <section class="scanner-card" aria-labelledby="scanner-label">
         <h2 id="scanner-label" class="sr-only">Analysis Scanner</h2>
 
-        <!-- Mode tabs -->
-        <div class="mode-tabs" role="tablist" aria-label="Choose analysis type">
+        <!-- Three mode tabs -->
+        <div class="mode-tabs" role="tablist" aria-label="Choose analysis method">
+          <button
+            id="tab-file"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-file"
+            class="tab-btn tab-active"
+          >
+            <span aria-hidden="true">📎</span>
+            <span class="tab-label">Upload File</span>
+          </button>
           <button
             id="tab-text"
             role="tab"
-            aria-selected="true"
+            aria-selected="false"
             aria-controls="panel-text"
-            class="tab-btn tab-active"
+            class="tab-btn"
           >
-            <span aria-hidden="true">📄</span> Analyse Text
+            <span aria-hidden="true">📄</span>
+            <span class="tab-label">Paste Text</span>
           </button>
           <button
             id="tab-url"
@@ -78,18 +87,85 @@
             aria-controls="panel-url"
             class="tab-btn"
           >
-            <span aria-hidden="true">🔗</span> Analyse URL
+            <span aria-hidden="true">🔗</span>
+            <span class="tab-label">Check URL</span>
           </button>
         </div>
 
         <form id="scan-form" novalidate aria-label="Scan input form">
 
-          <!-- Text panel -->
+          <!-- ════ FILE UPLOAD PANEL ════ -->
+          <div
+            id="panel-file"
+            role="tabpanel"
+            aria-labelledby="tab-file"
+            class="tab-panel"
+          >
+            <!-- Hidden real file input -->
+            <input
+              type="file"
+              id="file-input"
+              name="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              class="sr-only"
+              aria-label="Select offer letter file"
+            />
+
+            <!-- Drag and drop zone -->
+            <div
+              id="drop-zone"
+              class="drop-zone"
+              role="button"
+              tabindex="0"
+              aria-label="Click or drag and drop your offer letter file here. Supported formats: PDF, JPG, PNG, WebP"
+              aria-describedby="file-formats-help"
+            >
+              <div class="drop-icon" aria-hidden="true">
+                <span class="drop-icon-main">📄</span>
+                <span class="drop-icon-plus" aria-hidden="true">+</span>
+              </div>
+              <p class="drop-title">Drag &amp; drop your offer letter here</p>
+              <p class="drop-or">— or —</p>
+              <span class="drop-browse-btn" aria-hidden="true">Browse File</span>
+              <p id="file-formats-help" class="drop-formats">
+                Supports <strong>PDF</strong>, <strong>JPG</strong>, <strong>PNG</strong>, <strong>WebP</strong> &nbsp;·&nbsp; Max 10 MB
+              </p>
+            </div>
+
+            <!-- Selected file display -->
+            <div id="file-selected-display" class="file-selected-display hidden" aria-live="polite">
+              <div class="file-selected-inner">
+                <span id="file-type-icon" class="file-type-icon" aria-hidden="true">📄</span>
+                <div class="file-info">
+                  <span id="file-name-display" class="file-name-display"></span>
+                  <span id="file-size-display" class="file-size-display"></span>
+                </div>
+                <button
+                  type="button"
+                  id="file-clear-btn"
+                  class="file-clear-btn"
+                  aria-label="Remove selected file"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Google Vision API notice for images -->
+            <div id="vision-notice" class="vision-notice hidden">
+              <span aria-hidden="true">👁️</span>
+              Image files are processed using <strong>Google Cloud Vision API</strong> for text extraction.
+              Requires <code>GOOGLE_CLOUD_VISION_API_KEY</code> to be configured.
+            </div>
+          </div>
+
+          <!-- ════ TEXT PANEL ════ -->
           <div
             id="panel-text"
             role="tabpanel"
             aria-labelledby="tab-text"
-            class="tab-panel"
+            class="tab-panel hidden"
+            aria-hidden="true"
           >
             <label for="text-input" class="input-label">
               Paste message or document text
@@ -107,17 +183,12 @@
               rows="9"
               spellcheck="false"
             ></textarea>
-            <div
-              id="text-char-count"
-              class="char-count"
-              aria-live="polite"
-              aria-atomic="true"
-            >
+            <div id="text-char-count" class="char-count" aria-live="polite" aria-atomic="true">
               <span id="char-num">0</span> / 10,000 characters
             </div>
           </div>
 
-          <!-- URL panel -->
+          <!-- ════ URL PANEL ════ -->
           <div
             id="panel-url"
             role="tabpanel"
@@ -146,24 +217,15 @@
             </div>
           </div>
 
-          <!-- Inline validation error -->
-          <div
-            id="form-error"
-            class="form-error hidden"
-            role="alert"
-            aria-live="assertive"
-          ></div>
+          <!-- Validation error -->
+          <div id="form-error" class="form-error hidden" role="alert" aria-live="assertive"></div>
 
           <!-- Truncation notice -->
-          <div
-            id="truncation-notice"
-            class="truncation-notice hidden"
-            role="note"
-          >
-            ⚠️ Your text exceeded 10,000 characters and was trimmed for analysis.
+          <div id="truncation-notice" class="truncation-notice hidden" role="note">
+            ⚠️ Content exceeded 10,000 characters and was trimmed for analysis.
           </div>
 
-          <!-- Submit -->
+          <!-- Submit button -->
           <button
             type="submit"
             id="scan-btn"
@@ -180,7 +242,7 @@
         </form>
       </section>
 
-      <!-- ── Loading card ──────────────────────────────────────── -->
+      <!-- ── Loading section ───────────────────────────────────── -->
       <section
         id="loading-section"
         class="loading-section hidden"
@@ -194,7 +256,7 @@
             <span class="orb orb3"></span>
           </div>
           <p class="loading-title">Scanning for risk signals…</p>
-          <p id="loading-step" class="loading-step">Parsing content</p>
+          <p id="loading-step" class="loading-step">Preparing</p>
         </div>
       </section>
 
@@ -213,24 +275,11 @@
             <h2 class="score-card-title">Scam Threat Index</h2>
             <p class="score-card-subtitle">Risk assessment based on detected signals</p>
           </div>
-
           <div class="score-body">
             <!-- Circular gauge -->
             <div class="gauge-wrapper" aria-hidden="true">
-              <svg
-                class="gauge-svg"
-                viewBox="0 0 220 220"
-                width="220"
-                height="220"
-              >
-                <!-- Track circle -->
-                <circle
-                  class="gauge-track"
-                  cx="110" cy="110" r="90"
-                  fill="none"
-                  stroke-width="16"
-                />
-                <!-- Fill arc (animated) -->
+              <svg class="gauge-svg" viewBox="0 0 220 220" width="220" height="220">
+                <circle class="gauge-track" cx="110" cy="110" r="90" fill="none" stroke-width="16" />
                 <circle
                   id="gauge-arc"
                   class="gauge-arc"
@@ -246,8 +295,7 @@
                 <span class="gauge-percent">%</span>
               </div>
             </div>
-
-            <!-- Risk label and description -->
+            <!-- Risk label -->
             <div class="risk-info">
               <div id="risk-badge" class="risk-badge" aria-label="Risk level">
                 <span id="risk-emoji" class="risk-emoji" aria-hidden="true"></span>
@@ -258,27 +306,35 @@
             </div>
           </div>
 
-          <!-- Safe Browsing status banner -->
+          <!-- File info banner (file mode only) -->
+          <div id="file-info-banner" class="file-info-banner hidden"></div>
+
+          <!-- Safe Browsing status (URL mode only) -->
           <div id="sb-status" class="sb-status hidden"></div>
 
-          <!-- Domain info (URL mode) -->
+          <!-- Domain info (URL mode only) -->
           <div id="domain-card" class="domain-card hidden">
-            <h3 class="domain-card-title">
-              <span aria-hidden="true">🌐</span> Domain Information
-            </h3>
+            <h3 class="domain-card-title"><span aria-hidden="true">🌐</span> Domain Information</h3>
             <dl id="domain-info-list" class="domain-info-list"></dl>
           </div>
         </div>
 
-        <!-- Risk signals -->
+        <!-- Extracted text preview (file mode only) -->
+        <div id="extracted-text-section" class="extracted-text-section hidden">
+          <h2 class="section-title">
+            <span aria-hidden="true">📝</span> Extracted Text Preview
+          </h2>
+          <p class="extracted-text-note">The following text was extracted from your file and analysed:</p>
+          <div id="extracted-text-preview" class="extracted-text-preview" role="region" aria-label="Extracted text preview"></div>
+        </div>
+
+        <!-- Detected signals -->
         <div class="signals-section">
           <h2 class="section-title">
             Detected Risk Indicators
             <span id="signal-count-badge" class="signal-count-badge"></span>
           </h2>
-
           <div id="signals-container" class="signals-container" aria-live="polite"></div>
-
           <div id="no-signals-msg" class="no-signals-msg hidden">
             <span aria-hidden="true">✅</span>
             No specific risk indicators were detected in this scan.
@@ -299,33 +355,27 @@
           <p id="disclaimer-text" class="disclaimer-text"></p>
         </aside>
 
-        <!-- Scan another -->
+        <!-- Scan again -->
         <div class="scan-again-row">
           <button id="scan-again-btn" class="scan-again-btn" type="button">
             <span aria-hidden="true">🔄</span> Scan Another
           </button>
         </div>
 
-      </section><!-- /results-section -->
-
-    </div><!-- /container -->
+      </section>
+    </div>
   </main>
 
-  <!-- ══════════════════════════ FOOTER ════════════════════════════ -->
+  <!-- ════════════════════════════ FOOTER ══════════════════════════ -->
   <footer class="site-footer" role="contentinfo">
     <div class="container footer-inner">
       <p class="footer-text">
-        <strong>Phishing Inspector</strong> &mdash; Built for PromptWars Hackathon &mdash;
-        Uses <a
-          href="https://developers.google.com/safe-browsing"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="footer-link"
-        >Google Safe Browsing API</a>
+        <strong>Phishing Inspector</strong> &mdash; PromptWars Hackathon &mdash;
+        Uses <a href="https://developers.google.com/safe-browsing" target="_blank" rel="noopener noreferrer" class="footer-link">Google Safe Browsing</a>
+        &amp; <a href="https://cloud.google.com/vision" target="_blank" rel="noopener noreferrer" class="footer-link">Cloud Vision API</a>
       </p>
       <p class="footer-disclaimer">
-        For informational purposes only. Not a guarantee of fraud or legitimacy.
-        Always verify through official channels.
+        For informational purposes only. Not a guarantee of fraud or legitimacy. Always verify through official channels.
       </p>
     </div>
   </footer>

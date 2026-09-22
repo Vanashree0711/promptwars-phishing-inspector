@@ -77,6 +77,8 @@ app.get('/api/health', (req, res) => {
     timestamp:                 new Date().toISOString(),
     safeBrowsingConfigured:    !!process.env.GOOGLE_SAFE_BROWSING_API_KEY &&
                                process.env.GOOGLE_SAFE_BROWSING_API_KEY !== 'your_google_safe_browsing_api_key_here',
+    visionApiConfigured:       !!process.env.GOOGLE_CLOUD_VISION_API_KEY &&
+                               process.env.GOOGLE_CLOUD_VISION_API_KEY !== 'your_google_cloud_vision_api_key_here',
   });
 });
 
@@ -96,7 +98,13 @@ app.listen(PORT, () => {
     process.env.GOOGLE_SAFE_BROWSING_API_KEY &&
     process.env.GOOGLE_SAFE_BROWSING_API_KEY !== 'your_google_safe_browsing_api_key_here'
       ? 'Configured ✓'
-      : 'Not configured — Safe Browsing checks will be skipped (graceful degradation)'
+      : 'Not configured — Safe Browsing checks will be skipped'
+  }`);
+  console.log(`[Server] Cloud Vision API: ${
+    process.env.GOOGLE_CLOUD_VISION_API_KEY &&
+    process.env.GOOGLE_CLOUD_VISION_API_KEY !== 'your_google_cloud_vision_api_key_here'
+      ? 'Configured ✓ (image OCR enabled)'
+      : 'Not configured — image OCR unavailable; PDF analysis still works'
   }`);
 });
 

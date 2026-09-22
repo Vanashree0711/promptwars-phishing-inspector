@@ -2,17 +2,14 @@
 
 // ============================================================
 // routes/analyze.js
-// POST /api/analyze — main analysis endpoint.
+// Analysis API routes.
 //
-// Flow:
-//   1. Validate mode (text | url)
-//   2. Validate and sanitise input
-//   3. Run appropriate analyser(s)
-//   4. For URLs: run domain check + Safe Browsing in parallel
-//   5. Calculate and return the Scam Threat Index result
+//  POST /api/analyze        — JSON body (text or URL modes)
+//  POST /api/analyze/file   — multipart/form-data (file upload)
 // ============================================================
 
 const express = require('express');
+const multer  = require('multer');
 
 const { validateText, validateUrl, validateMode } = require('../utils/inputValidator');
 const { createError }      = require('../utils/errorHandler');
@@ -21,91 +18,137 @@ const { analyzeUrl }       = require('../services/urlAnalyzer');
 const { checkDomainAge }   = require('../services/domainChecker');
 const { checkSafeBrowsing } = require('../services/safeBrowsing');
 const { calculateScore }   = require('../services/scoreCalculator');
+const { extractText }      = require('../services/fileExtractor');
 
 const router = express.Router();
 
-/**
- * POST /api/analyze
- *
- * Request body:
- *   { mode: 'text' | 'url', content: string }
- *
- * Response:
- *   Full Scam Threat Index result object (see scoreCalculator.js)
- */
+// ── Multer configuration ──────────────────────────────────────
+// Memory storage: file bytes are kept in req.file.buffer;
+// nothing is written to disk, eliminating path-traversal risk.
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB hard limit
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Unsupported file type. Please upload a PDF, JPG, PNG, or WebP file.'));
+    }
+  },
+});
+
+// ── POST /api/analyze  (JSON — text or URL) ───────────────────
 router.post('/', async (req, res, next) => {
   try {
     const { mode, content } = req.body;
 
-    // ── Step 1: Validate mode ─────────────────────────────────
     if (!validateMode(mode)) {
       return next(createError('Invalid analysis mode. Use "text" or "url".', 400));
     }
 
-    // ── Step 2a: Text analysis ────────────────────────────────
+    // ─ Text analysis ─────────────────────────────────────────
     if (mode === 'text') {
       const validation = validateText(content);
-      if (!validation.valid) {
-        return next(createError(validation.error, 400));
+      if (!validation.valid) return next(createError(validation.error, 400));
+
+      const { detectedSignals } = analyzeText(validation.sanitized);
+      const result = calculateScore({ textSignals: detectedSignals, urlSignals: [], domainInfo: null, safeBrowsingResult: null, mode: 'text' });
+
+      return res.json({ ...result, mode: 'text', truncated: validation.truncated || false });
+    }
+
+    // ─ URL analysis ──────────────────────────────────────────
+    if (mode === 'url') {
+      const validation = validateUrl(content);
+      if (!validation.valid) return next(createError(validation.error, 400));
+
+      const { parsed } = validation;
+      const { detectedSignals: urlSignals } = analyzeUrl(parsed, validation.original);
+
+      const [domainInfo, safeBrowsingResult] = await Promise.all([
+        checkDomainAge(parsed.hostname).then((info) => ({ ...info, domain: parsed.hostname })),
+        checkSafeBrowsing(parsed.href),
+      ]);
+
+      const result = calculateScore({ textSignals: [], urlSignals, domainInfo, safeBrowsingResult, mode: 'url' });
+
+      return res.json({ ...result, mode: 'url', analyzedUrl: parsed.href });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /api/analyze/file  (multipart — file upload) ─────────
+router.post('/file', (req, res, next) => {
+  // Wrap multer to intercept its errors and return proper 400 responses
+  upload.single('file')(req, res, async (multerErr) => {
+    if (multerErr) {
+      if (multerErr.code === 'LIMIT_FILE_SIZE') {
+        return next(createError('File is too large. Maximum allowed size is 10 MB.', 400));
+      }
+      return next(createError(multerErr.message || 'File upload failed.', 400));
+    }
+
+    if (!req.file) {
+      return next(createError('No file was received. Please select a PDF or image file.', 400));
+    }
+
+    try {
+      const { buffer, mimetype, originalname, size } = req.file;
+
+      // Extract text from the file (PDF → pdf-parse, image → Vision API)
+      const extraction = await extractText(buffer, mimetype);
+
+      if (!extraction.text) {
+        return next(createError(extraction.error || 'Could not extract readable text from this file.', 422));
       }
 
+      // Validate and sanitise the extracted text
+      const validation = validateText(extraction.text);
+      if (!validation.valid) {
+        return next(
+          createError(
+            'The extracted text is too short for analysis. ' +
+              'The file may be blank or contain only graphics.',
+            422,
+          ),
+        );
+      }
+
+      // Run text analysis on the extracted content
       const { detectedSignals } = analyzeText(validation.sanitized);
 
       const result = calculateScore({
-        textSignals:       detectedSignals,
-        urlSignals:        [],
-        domainInfo:        null,
+        textSignals:        detectedSignals,
+        urlSignals:         [],
+        domainInfo:         null,
         safeBrowsingResult: null,
-        mode:              'text',
+        mode:               'file',
       });
 
       return res.json({
         ...result,
-        mode:      'text',
-        truncated: validation.truncated || false,
+        mode:                 'file',
+        fileName:             originalname,
+        fileSize:             size,
+        fileType:             mimetype,
+        pageCount:            extraction.pageCount ?? null,
+        extractedTextPreview: validation.sanitized.substring(0, 600).trim(),
+        truncated:            validation.truncated || false,
       });
+    } catch (err) {
+      next(err);
     }
-
-    // ── Step 2b: URL analysis ─────────────────────────────────
-    if (mode === 'url') {
-      const validation = validateUrl(content);
-      if (!validation.valid) {
-        return next(createError(validation.error, 400));
-      }
-
-      const { parsed } = validation;
-      const urlString  = parsed.href;
-      const domain     = parsed.hostname;
-
-      // Structural URL analysis (synchronous, no network calls)
-      const { detectedSignals: urlSignals } = analyzeUrl(parsed, validation.original);
-
-      // Domain-age check and Safe Browsing run concurrently
-      // If either fails, the other still completes (Promise.allSettled not needed —
-      // both functions handle their own errors and always resolve, never reject)
-      const [domainInfo, safeBrowsingResult] = await Promise.all([
-        checkDomainAge(domain).then((info) => ({ ...info, domain })),
-        checkSafeBrowsing(urlString),
-      ]);
-
-      const result = calculateScore({
-        textSignals:        [],
-        urlSignals,
-        domainInfo,
-        safeBrowsingResult,
-        mode:               'url',
-      });
-
-      return res.json({
-        ...result,
-        mode:        'url',
-        analyzedUrl: urlString,
-      });
-    }
-  } catch (err) {
-    // Unexpected errors go to the centralised error handler
-    next(err);
-  }
+  });
 });
 
 module.exports = router;
